@@ -1,0 +1,61 @@
+model.py = 
+from django.db import models
+
+# Create your models here.
+class Student(models.Model):
+    name = models.CharField(max_length=100)
+    roll = models.IntegerField()
+    city = models.CharField(max_length=100)
+
+
+admin.py =
+from django.contrib import admin
+from .models import Student
+# Register your models here.
+@admin.register(Student)
+class StudentAdmin(admin.ModelAdmin):
+    list_display = ['id','name','roll','city']
+
+serializers.py =
+from rest_framework import serializers
+from .models import Student
+
+class StudentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Student
+        fields = ['id','name', 'roll', 'city']
+
+views.py = 
+
+from .models import Student
+from .serializers import StudentSerializer
+from rest_framework.generics import ListCreateAPIView,RetrieveUpdateDestroyAPIView
+
+class StudentListCreate(ListCreateAPIView):
+    queryset = Student.objects.all()
+    serializer_class = StudentSerializer
+
+class StudentRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
+    queryset = Student.objects.all()
+    serializer_class = StudentSerializer
+
+
+
+    
+
+
+urls.py =
+from django.contrib import admin
+from django.urls import path
+from api import views
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('studentapi/', views.StudentListCreate.as_view()),
+    
+    path('studentapi/<int:pk>/', views.StudentRetrieveUpdateDestroyAPIView.as_view()),
+]
+
+
+
+

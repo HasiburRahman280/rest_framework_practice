@@ -1,0 +1,99 @@
+model.py = 
+from django.db import models
+
+# Create your models here.
+class Student(models.Model):
+    name = models.CharField(max_length=50)
+    roll = models.IntegerField()
+    city = models.CharField(max_length=50)
+    passby = models.CharField(max_length=50)
+
+admi.py =
+from django.contrib import admin
+from .models import Student
+# Register your models here.
+
+@admin.register(Student)
+class StudentAdmin(admin.ModelAdmin):
+    list_display = ['id','name','roll','city','passby']
+
+serializer.py =
+from rest_framework import serializers
+from .models import Student
+
+class StudentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Student
+        fields = ['id','name','roll','city','passby']
+
+views.py -= 
+from django.shortcuts import render
+from .models import Student
+from .serializers import StudentSerializer
+from rest_framework.generics import ListAPIView
+# Create your views here.
+
+class StudentList(ListAPIView):
+    queryset = Student.objects.all()
+    serializer_class = StudentSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        return Student.objects.filter(passby=user)
+
+urls.py = 
+from django.contrib import admin
+from django.urls import path
+from api import views
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('studentapi/', views.StudentList.as_view()),
+]
+
+
+
+backend django filter 
+
+setteing.py = 
+
+installapp[    'rest_framework',
+    'django_filters', ata aga command e pip install django-filter
+    'api',    
+]
+
+//globaly backend filter
+REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
+}
+
+
+views.py =
+from django.shortcuts import render
+from .models import Student
+from .serializers import StudentSerializer
+from rest_framework.generics import ListAPIView
+# Create your views here.
+
+class StudentList(ListAPIView):
+    queryset = Student.objects.all()
+    serializer_class = StudentSerializer
+    filterset_fileds =['city']
+
+//normaly backend filter
+views.py = 
+from django.shortcuts import render
+from .models import Student
+from .serializers import StudentSerializer
+from rest_framework.generics import ListAPIView
+from django_filters.rest_framework import DjangoFilterBackend
+# Create your views here.
+
+class StudentList(ListAPIView):
+    queryset = Student.objects.all()
+    serializer_class = StudentSerializer
+    filter_backends = [DjangoFilterBackend]
+    # filterset_fileds =['city']
+    filterset_fileds =['name','city']
+
+normaly 
+26 number video dak

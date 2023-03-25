@@ -1,0 +1,56 @@
+model.py
+from django.db import models
+
+# Create your models here.
+class Student(models.Model):
+    name = models.CharField(max_length=100)
+    roll = models.IntegerField()
+    city = models.CharField(max_length=100)
+
+
+serializer.py
+from rest_framework import serializers
+
+class StudentSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=100)
+    roll = serializers.IntegerField()
+    city = serializers.CharField(max_length=100)
+
+
+
+urls.py
+
+from django.contrib import admin
+from django.urls import path
+from api import views
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('stuinfo/<int:pk>', views.student_details),
+    path('stuinfo/', views.student_list),
+]
+
+
+views.py
+from django.shortcuts import render
+from .models import Student
+from .serializers import StudentSerializer
+from rest_framework.renderers import JSONRenderer
+from django.http import HttpResponse, JsonResponse
+# Create your views here.
+
+# Single object data
+def student_details(request,pk):
+    stu = Student.objects.get(id = pk)
+    serializer = StudentSerializer(stu)
+    json_data = JSONRenderer().render(serializer.data)
+    return HttpResponse(json_data, content_type='application/json')
+    # return JsonResponse(serializer.data)
+
+# all student data
+def student_list(request):
+    stu = Student.objects.all()
+    serializer = StudentSerializer(stu, many=True)
+    # json_data = JSONRenderer().render(serializer.data)
+    # return HttpResponse(json_data, content_type='application/json')
+    return JsonResponse(serializer.data, safe=False)

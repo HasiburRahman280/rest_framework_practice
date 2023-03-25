@@ -1,0 +1,77 @@
+model.py
+from django.db import models
+
+# Create your models here.
+class Student(models.Model):
+    name = models.CharField(max_length=100)
+    roll = models.IntegerField()
+    city = models.CharField(max_length=100)
+
+
+seralizier.py
+from rest_framework import serializers
+from .models import Student
+
+class StudentSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=100)
+    roll = serializers.IntegerField()
+    city = serializers.CharField(max_length=100)
+
+def create(self, validate_data):
+    return Student.objects.create(**validate_data)
+
+
+views.py
+from django.shortcuts import render
+import io
+from rest_framework.parsers import JSONParser
+from .serializers import StudentSerializer
+from rest_framework.renderers import JSONRenderer 
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+
+# Create your views here.
+@csrf_exempt
+def student_create(request):
+    if request.method == 'POST':
+        json_data = request.body
+        stream = io.BytesIO(json_data)
+        pythondata = JSONParser().parse(stream)
+        serializer = StudentSerializer(data=pythondata)
+        if serializer.is_valid():
+            serializer.save()
+            res = {'msg':'Data Created'}
+            json_data = JSONRenderer().render(res)
+            return HttpResponse(json_data, content_type='application/json')
+        json_data = JSONRenderer().render(serilizer.errors)
+        return HttpResponse(json_data, content_type='application/json')
+
+urls.py
+from django.contrib import admin
+from django.urls import path
+from api import views
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('stucreate/', views.student_create),
+]
+
+
+onno akta apps a kora lagbe
+otherapps.py
+import requests
+import json
+URL = "http://127.0.0.1:8000/stucreate/"
+
+data = {
+    'name':'Hasib',
+    'roll':'101',
+    'city':'dhaka',
+
+}
+
+json_data = json.dumps(data)
+
+r = requests.post(url = URL, data = json_data)
+data = r.json()
+print(data)
+

@@ -1,0 +1,90 @@
+model.py = 
+from django.db import models
+
+# Create your models here.
+class Singer(models.Model):
+    name = models.CharField(max_length=100)
+    gender = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+class Song(models.Model):
+    title = models.CharField(max_length=100)
+    singer = models.ForeignKey(Singer, related_name='song', on_delete=models.CASCADE)
+    duration = models.IntegerField()
+
+    def __str__(self):
+        return self.title
+
+
+
+admin.py = 
+from django.contrib import admin
+from .models import Singer,Song
+
+@admin.register(Singer)
+class SingerAdmin(admin.ModelAdmin):
+    list_display = ['id','name','gender']
+
+@admin.register(Song)
+class SongAdmin(admin.ModelAdmin):
+    list_display = ['id','title','singer','duration']
+
+
+serializer.py = 
+from rest_framework import serializers
+from .models import Singer,Song
+
+
+class SongSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Song
+        fields = ['id','title','singer','duration']
+
+
+class SingerSerializer(serializers.ModelSerializer):
+    # song = serializers.StringRelatedfield(many=True, read_only=True)
+    # song = serializers.PrimaryRelatedfield(many=True, read_only=True)
+    # song = serializers.HyperlinkedRelatedfield(many=True, read_only=True, view_name='song_detail')
+    song = serializers.SlugRelatedfield(many=True, read_only=True, slug_field='title')
+    class Meta:
+        model = Singer
+        fields = ['id','name','title','gender']
+
+
+
+view.py = 
+from django.shortcuts import render
+from .models import Singer,Song
+from .serializers import SingerSerializer,SongSerializer
+from rest_framework import viewsets
+
+class SingerViewSet(viewsets.ModelViewSet):
+    queryset = Singer.objects.all()
+    serializer_class = SingerSerializer
+
+class SongViewSet(viewsets.ModelViewSet):
+    queryset = Song.objects.all()
+    serializer_class = SongSerializer
+
+
+urls.py = 
+from django.contrib import admin
+from django.urls import path, include
+from api import views
+# from .serializers import SongSerializer,SingerSerializer
+from rest_framework.routers import DefaultRouter
+
+# create router object
+router = DefaultRouter()
+
+# register Student viewsset router
+router.register('singer', views.SingerViewSet, basename='singer')
+router.register('song', views.SongViewSet, basename='song')
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include(router.urls)),
+    path('', include('rest_framework.urls', namespace='rest_framework')),
+]

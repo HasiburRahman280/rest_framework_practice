@@ -1,0 +1,74 @@
+model.py =
+from django.db import models
+
+# Create your models here.
+class Student(models.Model):
+    name = models.CharField(max_length=100)
+    roll = models.IntegerField()
+    city = models.CharField(max_length=100)
+
+
+serializer.py =
+from rest_framework import serializers
+from .models import Student
+
+class StudentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Student
+        fields = ['id','name', 'roll', 'city']
+
+
+customauth.py =
+from rest_framework.authentication import BaseAuthentication
+from django.contrib.auth.models import User
+from rest_framework.exceptions import AuthenticationFailed
+
+class CustomAuthentication(BaseAuthentication):
+    def authenticate(self, request):
+        username = request.GET.get('username')
+        if username is None:
+            return None
+        
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            raise AuthenticationFailed('nO User')
+        return (user, None)
+
+views.py =
+from .models import Student
+from .serializers import StudentSerializer
+from rest_framework import viewsets 
+
+from rest_framework.permissions import IsAuthenticated
+from api.customauth import CustomAuthentication
+
+class StudentModelViewSet(viewsets.ModelViewSet):
+    queryset = Student.objects.all()
+    serializer_class = StudentSerializer
+    authentication_classes=[CustomAuthentication]
+    permission_classes = [IsAuthenticated]
+
+urls.py = 
+from django.contrib import admin
+from django.urls import path, include
+from api import views
+from rest_framework.routers import DefaultRouter
+from rest_framework_simplejwt.views import TokenobtainPairView,TokenRefreshView,TokenVerifyView
+# create router object
+router = DefaultRouter()
+
+# register Student viewsset router
+router.register('studentapi', views.StudentModelViewSet, basename='student')
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include(router.urls)),
+    path('gettoken/', TokenobtainPairView.as_view(),name='token_obtain_pair'),
+    path('refreshtoken/', TokenRefreshView.as_view(),name='token_refresh'),
+    path('verifytoken/', TokenVerifyView.as_view(), name ='token_verify'),
+   
+]
+command line a kaj asa geekyShows 24 number video
+

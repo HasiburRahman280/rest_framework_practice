@@ -1,0 +1,140 @@
+model.py=
+from django.db import models
+
+# Create your models here.
+class Student(models.Model):
+    name = models.CharField(max_length=100)
+    roll = models.IntegerField()
+    city = models.CharField(max_length=100)
+
+admin.py=
+from django.contrib import admin
+from .models import Student
+# Register your models here.
+@admin.register(Student)
+class StudentAdmin(admin.ModelAdmin):
+    list_display = ['id','name','roll','city']
+
+
+serializer.py=
+from rest_framework import serializers
+from .models import Student
+
+class StudentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Student
+        fields = ['id','name', 'roll', 'city']
+
+
+views.py = 
+from django.shortcuts import render
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .models import Student
+from .serializers import StudentSerializer
+
+# Create your views here.
+@api_view(['GET','POST','PUT','DELETE'])
+def student_api(request):
+    if request.method == 'GET':
+        id = request.data.get('id')
+        if id is not None:
+            stu = Student.objects.get(id=id)
+            serializer = StudentSerializer(stu)
+            return Response(serializer.data)
+        stu = Student.objects.all()
+        serializer = StudentSerializer(stu, many=True)
+        return Response(serializer.data)
+
+    if request.method == 'POST':
+        serializer = StudentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'msg':'data create'})
+        return Response(serializer.errors)
+    if request.method == 'PUT':
+        id = request.data.get('id')
+        stu = Student.objects.get(pk=id)
+        serializer = StudentSerializer(stu, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'msg':'data update'})
+        return Response(serializer.errors)
+    
+    if request.method == 'DELETE':
+        id = request.data.get('id')
+        stu = Student.objects.get(pk=id)
+        stu.delete()
+        return Response({'msg':'data delete'})
+
+urls.py=
+from django.contrib import admin
+from django.urls import path
+from api import views
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('studentapi/', views.student_api),
+]
+
+
+myapp.py=
+import requests
+import json
+
+URL = "http://127.0.0.1:8000/studentapi/"    
+
+def get_data(id = None):
+    data = {}
+    if id is not None:
+        data = {'id':id}
+    json_data = json.dumps(data)
+    headers = {'content-Type':'application/json'}
+    r = requests.get(url = URL,headers = headers, data=json_data)
+    data = r.json()
+    print(data)
+    
+# get_data()
+
+def post_data():
+    data = {
+        'name':'sohit',
+        'roll':'125',
+        'city':'mirpur',
+    }
+    headers = {'content-Type':'application/json'}
+
+    json_data = json.dumps(data)
+    r = requests.post(url = URL,headers = headers, data=json_data)
+    data = r.json()
+    print(data)
+
+# post_data()
+
+def update_data():
+    data = {
+        'id': 3,
+        'name':'pk',
+        'city':'rangpur ',
+    }
+    headers = {'content-Type':'application/json'}
+
+    json_data = json.dumps(data)
+    r = requests.put(url = URL,headers = headers, data=json_data)
+    data = r.json()
+    print(data)
+
+# update_data()
+
+def delete_data():
+    data = {
+        'id': 4,
+    }
+    headers = {'content-Type':'application/json'}
+    json_data = json.dumps(data)
+    r = requests.delete(url = URL,headers = headers, data=json_data)
+    data = r.json()
+    print(data)
+delete_data()
+
+

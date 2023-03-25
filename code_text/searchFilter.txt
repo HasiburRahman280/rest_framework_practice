@@ -1,0 +1,97 @@
+model.py = 
+from django.db import models
+
+# Create your models here.
+class Student(models.Model):
+    name = models.CharField(max_length=50)
+    roll = models.IntegerField()
+    city = models.CharField(max_length=50)
+    passby = models.CharField(max_length=50)
+
+admi.py =
+from django.contrib import admin
+from .models import Student
+# Register your models here.
+
+@admin.register(Student)
+class StudentAdmin(admin.ModelAdmin):
+    list_display = ['id','name','roll','city','passby']
+
+serializer.py =
+from rest_framework import serializers
+from .models import Student
+
+class StudentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Student
+        fields = ['id','name','roll','city','passby']
+
+
+views.py = 
+from django.shortcuts import render
+from .models import Student
+from .serializers import StudentSerializer
+from rest_framework.generics import ListAPIView
+from rest_framework.filters import SearchFilter
+
+# Create your views here.
+
+class StudentList(ListAPIView):
+    queryset = Student.objects.all()
+    serializer_class = StudentSerializer
+    filter_backends = [SearchFilter]
+    # search_fields = ['city']
+    search_fields = ['name','city']
+
+
+urls.py = 
+
+from django.contrib import admin
+from django.urls import path
+from api import views
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('studentapi/', views.StudentList.as_view()),
+]
+
+
+setteing.py =
+    'rest_framework',
+    'django_filters',
+    'api',
+
+
+
+
+
+
+/////
+golbally search er name change =
+seteing.py =
+
+REST_FRAMEWORK = {
+    'SEARCH_PARAM': 'q'
+}
+
+views.py = 
+from django.shortcuts import render
+from .models import Student
+from .serializers import StudentSerializer
+from rest_framework.generics import ListAPIView
+from rest_framework.filters import SearchFilter
+
+# Create your views here.
+
+class StudentList(ListAPIView):
+    queryset = Student.objects.all()
+    serializer_class = StudentSerializer
+    filter_backends = [SearchFilter]
+    # search_fields = ['city']
+    # search_fields = ['name','city']
+    search_fields = ['^name']
+    # search_fields = ['=name']
+   
+
+27 number
+
+   

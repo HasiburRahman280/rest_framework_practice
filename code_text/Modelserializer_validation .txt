@@ -1,0 +1,202 @@
+model.py
+from django.db import models
+
+# Create your models here.
+class Student(models.Model):
+    name = models.CharField(max_length=100)
+    roll = models.IntegerField()
+    city = models.CharField(max_length=100)
+
+admin.py
+from django.contrib import admin
+from .models import Student
+# Register your models here.
+@admin.register(Student)
+class StudentAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name', 'roll', 'city']
+
+
+serializers.py
+from rest_framework import serializers
+from .models import Student
+
+class StudentSerializer(serializers.ModelSerializer):
+    # validation
+    def start_with_r(value):
+        if value[0].lower() != 'r':
+            raise serializers.ValidationError('name start with R')
+    
+    name = serializers .CharField(validators=[start_with_r])
+
+    class Meta:
+        model = Student
+        fields = ['name', 'roll', 'city']
+
+# field validation
+    def validate_roll(self, value):
+        if value >=200:
+            raise serializers.ValidationError('Seat Full')
+        return value
+    
+# object validation 
+    def validate(self, data):
+        nm = data.get('name')
+        ct = data.get('city')
+        if nm.lower() == 'rohit' and ct.lower() != 'ranchi':
+            raise serializers.ValidationError('City must be Ranchi')
+        return data
+
+
+
+
+
+
+
+views.py
+from django.shortcuts import render
+import io
+from rest_framework.parsers import JSONParser
+from .models import Student
+from .serializers import StudentSerializer
+from rest_framework.renderers import JSONRenderer
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views import View
+# Create your views here.
+
+@method_decorator(csrf_exempt, name='dispatch')
+class StudentApi(View):
+    def get(self, request, *args, **kwargs):
+        json_data = request.body
+        stream = io.BytesIO(json_data)
+        pythondata = JSONParser().parse(stream)
+        id = pythondata.get('id', None)
+        if id is not None:
+           stu = Student.objects.get(id=id)
+           serializer = StudentSerializer(stu)
+           json_data = JSONRenderer().render(serializer.data)
+           return HttpResponse(json_data, content_type='application/json')
+        stu = Student.objects.all()
+        serializer = StudentSerializer(stu, many=True)
+        json_data = JSONRenderer().render(serializer.data)
+        return HttpResponse(json_data, content_type='application/json')
+
+    def post(self, request, *args, **kwargs):
+        json_data = request.body
+        stream = io.BytesIO(json_data)
+        pythondata = JSONParser().parse(stream)
+        serializer = StudentSerializer(data = pythondata)
+        if serializer.is_valid():
+            serializer.save()
+            res = {'msg': 'Data Created'}
+            json_data = JSONRenderer().render(res)
+            return HttpResponse(json_data, content_type='application/json')
+        json_data = JSONRenderer().render(serializer.errors)
+        return HttpResponse(json_data, content_type='application/json')
+        
+    def put(self, request, *args, **kwargs):
+        json_data = request.body
+        stream = io.BytesIO(json_data)
+        pythondata = JSONParser().parse(stream)
+        id = pythondata.get('id')
+        stu = Student.objects.get(id=id)
+        serializer = StudentSerializer(stu,data = pythondata, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            res = {'msg': 'Data Update'}
+            json_data = JSONRenderer().render(res)
+            return HttpResponse(json_data, content_type='application/json')
+        json_data = JSONRenderer().render(serializer.errors)
+        return HttpResponse(json_data, content_type='application/json')
+                
+    def delete(self, request, *args, **kwargs):
+        json_data = request.body
+        stream = io.BytesIO(json_data)
+        pythondata = JSONParser().parse(stream)
+        id = pythondata.get('id')
+        stu = Student.objects.get(id=id)
+        stu.delete()
+        res = {'msg': 'Data deleted'}
+        # json_data = JSONRenderer().render(res)
+        # return HttpResponse(json_data, content_type='application/json')
+        return JsonResponse(res, safe=False)
+
+
+
+
+
+
+
+
+urls.py
+
+from django.contrib import admin
+from django.urls import path
+from api import views
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('studentapi/', views.StudentApi.as_view()),
+]
+
+
+
+myapp.py
+import requests
+import json
+
+URL = "http://127.0.0.1:8000/studentapi/"    
+
+def get_data(id = None):
+    data = {}
+    if id is not None:
+        data = {'id':id}
+    json_data = json.dumps(data)
+    r = requests.get(url = URL, data=json_data)
+    data = r.json()
+    print(data)
+    
+# get_data(1)
+
+def post_data():
+    data = {
+        'name':'rohit',
+        'roll':'115',
+        'city':'mirpur',
+    }
+
+    json_data = json.dumps(data)
+    r = requests.post(url = URL, data=json_data)
+    data = r.json()
+    print(data)
+
+post_data()
+
+def update_data():
+    data = {
+        'id': 4,
+        'name':'pk',
+        'city':'mir ',
+    }
+
+    json_data = json.dumps(data)
+    r = requests.put(url = URL, data=json_data)
+    data = r.json()
+    print(data)
+# update_data()
+
+def delete_data():
+    data = {
+        'id': 4,
+    }
+
+    json_data = json.dumps(data)
+    r = requests.delete(url = URL, data=json_data)
+    data = r.json()
+    print(data)
+# delete_data()
+
+
+
+
+
